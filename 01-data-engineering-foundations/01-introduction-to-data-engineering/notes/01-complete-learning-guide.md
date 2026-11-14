@@ -1,7 +1,8 @@
 # Day 01 | Introduction to Data Engineering — From First Principles to Architecture Decisions
 
 > **Audience:** First-time learners progressing toward professional data engineering design.  
-> **Scenario:** A Australian omnichannel retail reference scenario.  
+> **Scenario:** An Australian omnichannel retail reference scenario.
+>
 > **Prerequisites:** None.  
 > **Outcome:** Explain why a pipeline exists, trace a record through it, and critique an Azure reference architecture.
 

@@ -1,6 +1,6 @@
 # Day 01 — Introduction to Data Engineering and the Data Lifecycle
 
-**Module 01 / Chapter 01 of 05** · Official course launch · Revision 2 in progress
+**Module 01 / Chapter 01 of 05**
 
 ## Learning outcomes
 1. Define data engineering, its business value, related roles and source contracts.
@@ -11,7 +11,7 @@
 
 ## Complete learning guide
 
-[Read the full beginner-to-enterprise Day 01 lesson](notes/01-complete-learning-guide.md). The guide teaches concepts first, then logical design, then Azure implementation choices, with official Microsoft references and knowledge checks.
+[Read the complete Day 01 lesson](notes/01-complete-learning-guide.md). The guide teaches concepts first, then logical design, then Azure implementation choices, with official Microsoft references and knowledge checks.
 
 ## Editable architecture diagrams
 [Open the four-page draw.io source](architecture/day01-architectures.drawio) in diagrams.net.
@@ -23,10 +23,12 @@
 | ARCH-003 | Batch, Streaming and CDC | Understand three ingestion patterns |
 | ARCH-004 | Azure Retail Architecture | Read a sample ADF → ADLS → Databricks → Power BI architecture |
 
-## Publication status
-- **Published and verified on GitHub:** this chapter index and the editable draw.io source.
-- **Earlier binary drafts rejected for quality:** the PDF, diagram export and PowerPoint must be redesigned and verified before publishing. These binary assets have **not yet been uploaded to GitHub**, so no broken links are shown.
-- The draw.io GitHub source and locally rendered architecture PDF are separate revisions; verify parity before final publication.
+## Study materials
+
+- [Retail lifecycle walkthrough](notes/02-retail-lifecycle-walkthrough.md)
+- [Lesson PDF](notes/day01-data-engineering-foundations.pdf)
+- [Architecture diagrams PDF](architecture/day01-architectures.pdf)
+- [PowerPoint slides](presentation/day01-data-engineering-foundations.pptx)
 
 ## Primary Microsoft references
 - [Azure Architecture Center](https://learn.microsoft.com/azure/architecture/)

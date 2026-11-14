@@ -1,12 +1,18 @@
-# Data Engineering Foundations
+# 01 — Data Engineering Foundations
 
-Part 1 of the Azure Data Engineering curriculum (five in-depth topics).
+Five sequential chapters covering core concepts and architecture before implementation-focused modules.
 
-## Learning resources
-- [Notes](notes/)
-- [Hands-on labs](hands-on-labs/)
-- [Datasets](datasets/)
+| Day | Topic | Status |
+|---|---|---|
+| 01 | [Introduction to Data Engineering and the Data Lifecycle](01-introduction-to-data-engineering/) | README and editable draw.io published; binary PDFs/PPT pending GitHub upload |
+| 02 | OLTP, OLAP, ETL and ELT | Planned |
+| 03 | Data Sources, Formats and APIs | Planned |
+| 04 | Batch, Streaming and CDC | Planned |
+| 05 | Modern Data Platform Architecture | Planned |
 
-Materials will be added only where relevant to each topic. Conceptual lessons prioritize complete definitions, diagrams and worked examples; implementation lessons include tested labs, code, data, solutions and validation.
+## Standards
+Detailed PDF chapters, clean editable draw.io diagrams with matching PDF exports, official references, and a professionally designed 15–20-slide PowerPoint. Only create topic-relevant folders.
+
+[Return to the full curriculum](../)
 
 **Author:** Madhur Mehta (professorofdata)

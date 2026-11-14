@@ -2,6 +2,10 @@
 
 **Module 01 / Chapter 01 of 05**
 
+## Start with the glossary
+
+[Data Engineering and Business Glossary](notes/00-glossary.md) explains 137 terms in learning order.
+
 ## Learning outcomes
 1. Define data engineering, its business value, related roles and source contracts.
 2. Explain the complete data lifecycle from requirements to governed consumption.

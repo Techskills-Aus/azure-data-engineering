@@ -5,7 +5,7 @@
 1. Read the [complete chapter](notes/OLTP%2C%20OLAP%2C%20ETL%20and%20ELT.md) or [download the textbook PDF](notes/OLTP%2C%20OLAP%2C%20ETL%20and%20ELT.pdf).
 2. Compare the two pipeline boundaries using the [architecture PDF](architecture/OLTP%2C%20OLAP%2C%20ETL%20and%20ELT%20-%20Architecture.pdf) or [editable draw.io](architecture/OLTP%2C%20OLAP%2C%20ETL%20and%20ELT%20-%20Architecture.drawio). Page ARCH-201 shows ETL and ELT side by side.
 3. Open the [editable teaching slides](presentation/OLTP%2C%20OLAP%2C%20ETL%20and%20ELT.pptx).
-4. Run the SQL exercise, then try the [eight interview questions and worked answers](interview-questions/).
+4. Run the SQL exercise.
 
 ## Local practice
 

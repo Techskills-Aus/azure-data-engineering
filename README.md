@@ -29,6 +29,8 @@ Study in numbered order. Every chapter will provide topic-specific notes, practi
 | 19 | [enterprise architecture and migration](19-enterprise-architecture-and-migration/) | 5 |
 | 20 | [production capstone and interview preparation](20-production-capstone-and-interview-preparation/) | 5 |
 
+| 21 | [Interview Questions](21-interview-questions/) | Reserved until Modules 01–20 are complete |
+
 ## Start here
 
 [Module 01 — Day 01: Introduction to Data Engineering](01-data-engineering-foundations/01-introduction-to-data-engineering/)

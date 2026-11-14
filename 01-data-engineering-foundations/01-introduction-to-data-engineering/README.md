@@ -42,6 +42,3 @@
 
 **Author:** Madhur Mehta (professorofdata)
 
-## Interview practice
-
-[Eight interview questions with worked answers](interview-questions/)

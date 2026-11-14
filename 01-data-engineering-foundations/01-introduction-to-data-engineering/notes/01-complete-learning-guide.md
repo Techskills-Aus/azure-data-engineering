@@ -290,7 +290,7 @@ A team proposes a daily extract filtered by `updated_at > last_success_time`, ap
 
 **Expected reasoning:** The proposed job can omit tied or deleted changes, double-count retries, and show an apparently fresh dashboard with incorrect totals. The fix is a contract and state model, not merely a different refresh schedule.
 
-## Common misconceptions and operational questions
+## Common misconceptions and operational checks
 
 - **“Exactly once delivery” means exactly once business effect.** Transport may retry. Define stable event identity and idempotent application of a change.
 - **A green pipeline run proves the metric.** It proves only the checks the run actually made. Add business reconciliation and freshness controls.

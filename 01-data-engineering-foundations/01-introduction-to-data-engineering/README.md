@@ -30,7 +30,7 @@
 ## Study materials
 
 - [Retail lifecycle walkthrough](notes/02-retail-lifecycle-walkthrough.md)
-- [Lesson PDF](notes/day01-data-engineering-foundations.pdf)
+- [Lesson PDF](notes/day01-lecture-blue-white.pdf)
 - [Architecture diagrams PDF](architecture/day01-architectures.pdf)
 - [PowerPoint slides](presentation/day01-data-engineering-foundations.pptx)
 

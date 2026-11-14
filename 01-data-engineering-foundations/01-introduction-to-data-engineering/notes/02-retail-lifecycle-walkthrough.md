@@ -48,27 +48,47 @@ Use separate identities for ingestion, transformation and consumption. Scope wri
 ## Decide what happens on failure
 If the orchestrator retries after storage has accepted a file, compare batch identity and content before reusing it. If a quality gate fails, preserve the last published close, quarantine the bad data and alert the owner. Commit the checkpoint after successful validated publication, or make publication and replay idempotent across a checkpoint failure. Replaying the same input range must preserve row counts and totals. A dashboard refresh alone cannot confirm this.
 
-## Knowledge checks with worked answers
+## Review questions with worked answers
 
-### 1. Which timestamps matter when a refund arrives late?
+### 1. How do event time, ingestion time and business date differ?
 
-Event time records when the underlying business event occurred. Arrival time records when the platform received its representation. Processing and publication times show when that representation was transformed and exposed. Suppose a sale occurred Monday in Sydney, its refund was issued Tuesday, and the refund reached Azure Wednesday. An event-date refund measure attributes it to Tuesday, while an original-sale restatement measure can adjust Monday under an explicit finance rule. Both can use the same source record. Preserve the separate timestamps and document which measure uses each date.
+**Definition** — Event time describes when an event happened. Ingestion time describes when the platform received it. Business date applies the organization's reporting calendar and cutoff.
 
-### 2. How do orchestration and transformation work together?
+**Reasoning** — Keep these values separately because they answer different questions. Arrival time diagnoses delivery delay. Reporting date determines the period affected under the business rule. Choosing arrival date by default can shift late transactions into the wrong day.
 
-Azure Data Factory manages when the extraction runs, which source bounds it reads, and whether later activities may start. Databricks applies data rules such as parsing amounts, selecting the accepted version, and calculating net sales. For example, after ADF confirms that all Bronze files belong to a complete batch, it can launch a Databricks job with the batch identifier. The job reports quality counts and publication status. ADF can use those results when deciding whether to mark the batch complete. A green orchestration status is meaningful only when its success criteria include the required downstream checks.
+**Example** — An order placed Monday in Sydney arrives Tuesday. It counts on Monday under an event-date sales definition, while the operations team records its Tuesday arrival and investigates the delay.
 
-### 3. How do you make retries safe when data was already written?
+### 2. How are orchestration and transformation different?
 
-Keep a stable batch identity tied to the source bounds and a manifest for its immutable inputs. In the target, apply changes using the business key and source version. Reprocessing an already accepted version leaves the accepted state and totals unchanged. If a Gold write succeeded before the completion marker was saved, reconcile the target publication on restart and finish recording completion or safely replay the same batch. A same-key, same-version record whose payload differs belongs in quarantine because the source contract cannot determine which value is correct.
+**Definition** — Orchestration coordinates the order and conditions of work. Transformation applies rules that reshape or interpret the records.
 
-### 4. Where do monitoring and security belong in the architecture?
+**Reasoning** — An orchestration step can wait for a complete input manifest and launch validation. The transformation checks keys, standardizes values and calculates amounts. A failed validation must be visible to orchestration so the next step can wait and the previous publication can remain available.
 
-Each handoff has a different exposure and failure mode. The extraction identity needs read access to approved source objects. The ingestion identity needs write access in the landing area. The serving identity reads curated tables through the SQL endpoint. Monitor elapsed time, source coverage, rejected rows and published-through date so an operational alert can identify the failing stage. Logs should identify runs and policy failures without copying sensitive values into broadly accessible operational records.
+**Example** — The intake finishes copying a retail batch, but validation finds an invalid order-line key. The workflow records the failed quality check and withholds publication while the affected records are investigated.
 
-### 5. Why is a successful ingestion job insufficient evidence for trusting a sales report?
+### 3. What makes a pipeline retry idempotent?
 
-Ingestion confirms that a read and write operation finished. It cannot establish that the extract covered the expected source window, that retries did not duplicate transactions, or that the sales measure applies the correct discount and refund rules. Validate three boundaries separately. Compare the source control counts against the Bronze manifest, reconcile accepted and quarantined records in Silver, and compare the Gold totals against a control total calculated using the same definitions and reporting period. A run can copy 100% of the rows it read and still miss an entire store when the source filter is wrong.
+**Definition** — A processing operation is idempotent when applying the same logical input again leaves the accepted business state unchanged.
+
+**Reasoning** — Use a stable identity for the delivered batch and a stable key and version for the business record. Reapplying an accepted version leaves its amount unchanged. If identical keys and versions carry conflicting values, investigate the source contract before choosing a result.
+
+**Example** — The AUD 89 line of AU-104 arrives twice. Both receipts can remain available for audit, but the accepted sales fact counts the line once. A later authoritative version of a different line legitimately changes the total.
+
+### 4. How can you tell whether a published result is ready?
+
+**Definition** — Publication is the handoff of a validated result to its consumers. Reconciliation compares results against agreed independent checks.
+
+**Reasoning** — Check the expected input coverage, explain how records were accepted or excluded, and compare the published amount against a control total with the same scope. Verify the freshness of the result consumers can see. A completed file copy provides evidence for only one stage.
+
+**Example** — Two accepted lines total AUD 120 after removing a repeated delivery. A newer version adjusts one line by AUD 6. The revised total is AUD 114, and the previous and revised amounts can be traced to their source batches.
+
+### 5. What should a data contract say about keys and missing fields?
+
+**Definition** — A data contract records the structure, business meaning and delivery expectations shared between a producer and its consumers.
+
+**Reasoning** — Document required identifiers, how versions are ordered, and whether missing fields are allowed. Specify the action when an input breaks the contract. Rejecting or isolating the affected record preserves the evidence needed to resolve the failure.
+
+**Example** — An order line arrives without a line ID. The team cannot determine whether it is a new sale or a correction. The input is isolated with its batch ID and a rejection reason so the source owner can address it.
 
 ## Glossary
 **Grain** means what one row represents. **Watermark** is a boundary used to resume incremental processing. **Lineage** is traceability through transformations. **Semantic model** defines governed business measures and relationships for consumption. **Quarantine** isolates suspect records for review. **Freshness** measures how current the published data is relative to an agreed business time.

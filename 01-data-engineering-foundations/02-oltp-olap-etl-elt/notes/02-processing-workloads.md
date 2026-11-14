@@ -91,47 +91,71 @@ Run the [local SQL exercise](../sql/retail-processing.sql) as described in the c
 
 For a design exercise, assume free-text order notes may not leave the operational boundary. Identify the allowed columns, define which control totals the destination can calculate, and describe how you would replay a late correction. Your design must identify the last accepted publication and the source bounds used to build it.
 
-## 7. Topic questions with worked answers
+## 7. Interview questions with worked answers
 
-### 1. A dashboard runs a 12-month aggregation during checkout hours. What would you measure first?
+### 1. What is the difference between OLTP and OLAP?
 
-Compare checkout p95 latency and database CPU, I/O and waits before and during the dashboard query. Check actual query duration and concurrency. A move to separate analytical compute can isolate large scans, but it also creates a replication or extraction delay. Agree whether the dashboard needs seconds, minutes or next-day freshness before selecting an integration path.
+**Definition** — OLTP supports operational actions that read or modify business records. OLAP supports analysis across many records, often over time.
 
-### 2. Which workload is a query for one customer's order status?
+**Reasoning** — Identify the purpose, number of records touched, and performance expectation. Checkout needs responsive, correct changes and safe concurrent writes. Regional sales analysis needs consistent definitions, appropriate grain and efficient aggregation. The same source data can support both purposes.
 
-It typically supports an operational action and reads a small set of records by key, so it fits an OLTP access pattern. The same order status becomes analytical input when a report calculates cancellation rates for every region over a quarter. Classify the workload by the query and purpose, even when the source field is the same.
+**Example** — Reserving stock for one order is OLTP. Summing confirmed merchandise sales by region for a quarter is OLAP, even though those sales originated in operational orders.
 
-### 3. A tool extracts records into a temporary folder, masks them, and loads a warehouse. Is this ETL or ELT?
+### 2. Why should order creation and stock reservation be one transaction in this example?
 
-Relative to the warehouse, it is ETL because the masking happens before the designated target receives the rows. A temporary intermediate copy does not change the classification. Identify the target and the transformation boundary before classifying any design.
+**Definition** — A transaction groups operations under a defined commit or rollback outcome. Atomicity means the grouped changes take effect together.
 
-### 4. Which design would you choose if analysts must reclassify three years of history?
+**Reasoning** — If an order requires reserved stock to be valid, its header and lines should commit only when the reservation succeeds. Concurrency controls still matter. An unconditional stock update can produce the wrong business outcome even when it runs inside a transaction.
 
-ELT can support recategorization when permitted historical inputs are retained and can be replayed. Confirm the historical keys and category history exist and compute costs are acceptable. An ETL design can also support reprocessing if an approved staging area preserves the necessary evidence. Describe retention and replay explicitly instead of relying on the label.
+**Example** — With one unit left, a conditional update permits one buyer to reserve it. The competing request sees that no row was updated and rolls back its order changes.
 
-### 5. Why did a shipping charge double after joining orders to lines?
+### 3. How would you classify a query for one order, and what follow-up might an interviewer ask?
 
-The charge belongs to the order, while the joined result has one row per line. Order A101 appears twice because it contains two lines, so a header charge appears twice. Aggregate shipping at order grain or allocate it using a documented rule that sums back to the original charge.
+**Definition** — Workload classification describes the purpose and access pattern of an operation.
 
-### 6. Every source row was copied. Why might reported revenue still be wrong?
+**Reasoning** — A keyed lookup for a current order supports an operational action. An interviewer might ask whether every read against an operational database counts as OLTP. Evaluate the work the query performs. Historical grouping across thousands of orders has analytical characteristics even when it runs against the operational database.
 
-Copy counts verify transportation within the selected source scope. Revenue can still be wrong if cancellations are mishandled, a join multiplies facts or a source window cuts through a business day. Verify delivery completeness, accepted grain, business rules and totals as separate checks. The exercise's three count and amount reconciliations show how to isolate those failures.
+**Example** — A support agent checks order A101 by ID. A manager then asks for cancellation rates across all regions for a quarter. The two questions use the same status field but demand different work.
 
-### 7. Can staging data in ADLS be sufficient evidence that a report is ready?
+### 4. Why might a company separate checkout from historical reporting?
 
-An accepted delivery tells you that inputs arrived. The report also depends on transformations, reconciliation and the serving refresh. Use a publication record to mark the accepted target version and expose its data-through time. A batch can be ready for transformation while the last accepted report remains unchanged.
+**Definition** — Workload isolation means allocating separate resources or environments to workloads with different operating needs.
 
-### 8. The source invalidates a line after it was reported. What should the pipeline do?
+**Reasoning** — Large scans and aggregations can compete with small operational reads and writes for compute and I/O. Separate analytical processing can protect checkout responsiveness. It also creates a data movement and freshness obligation. Decide how current the report needs to be before adopting the design.
 
-Capture the correction as a new authoritative version or operation. Apply it to the affected business key and recompute the applicable historical period under the reporting policy. Validate the delta against the prior publication, preserve audit evidence and expose the new accepted version. Replaying the correction should preserve the same final balance.
+**Example** — Checkout must respond promptly throughout the day, while finance can accept a validated report next morning. Processing the reporting batch independently supports both goals and makes the publication cutoff explicit.
 
-### 9. A transaction commits, but the client times out. Is another submission safe?
+### 5. What is the difference between ETL and ELT?
 
-The timeout does not reveal whether the database committed. An immediate submission with a new identity can create a second order. Use the original request identifier to look up the committed result or retry through a uniqueness rule on that identifier. Verify that the order, lines and inventory reservation still correspond to exactly one successful request.
+**Definition** — ETL extracts, transforms and then loads the designated analytical target. ELT extracts, loads approved input and transforms it within the analytical environment.
 
-### 10. ETL and ELT agree, but their output is 9,000 cents too high. What test is missing?
+**Reasoning** — Identify the target boundary first. Then locate the transformations that make rows suitable for that target. Temporary staging by itself does not settle the classification. Also ask what evidence can be retained for recovery under each approach.
 
-Both paths may share the same cancellation rule and therefore share the same bug. Check the source status and the independent reconciliation. Four input lines should yield three accepted lines and one cancelled exclusion, with 9,000 gross cents explained by that exclusion. Comparing the paths tests implementation agreement. Comparing each path against a business fixture tests correctness.
+**Example** — Filtering cancellations and calculating net amounts before the analytical target receives the rows is ETL. Loading approved source-shaped rows and applying the same calculation on the analytical platform is ELT.
+
+### 6. When would ETL be a reasonable choice, and when might ELT help?
+
+**Definition** — ETL and ELT are placement choices for transformation relative to the analytical target.
+
+**Reasoning** — ETL helps when certain fields must be excluded or transformed before data crosses an approved boundary. ELT can help when permitted history must be retained for changing rules and repeated analysis. Both choices require explicit source coverage, data quality checks and publication rules.
+
+**Example** — Remove restricted order notes before transferring the extract. If finance later needs to recalculate sales categories, keep the permitted line and product history and run the revised classification on that approved input.
+
+### 7. Why can a join overstate an order-level amount?
+
+**Definition** — Grain defines what one record represents. Join cardinality describes how many records can match between the joined tables.
+
+**Reasoning** — Amounts should be aggregated at the grain where they belong. Joining one order to several lines repeats its order-level fields on every line. Reporting at line grain requires an allocation rule if the measure is fundamentally order-level.
+
+**Example** — A101 has two lines. A 500-cent shipping charge stored on the header appears twice after a direct join. Summing it yields 1,000 cents. Aggregate shipping separately or allocate amounts across the two lines that add up to 500.
+
+### 8. How would you prove the ETL and ELT paths produced a correct result?
+
+**Definition** — Parity checks compare outputs across implementations. Reconciliation tests the outputs against independently expected business totals.
+
+**Reasoning** — Check both row identities and amounts because matching totals can hide offsetting errors. Compare each path with an independent example and explain exclusions. Both paths may share the same faulty filtering logic even if they agree exactly.
+
+**Example** — The exercise starts with four lines and 33,500 gross cents. Exclude one cancelled line worth 9,000 cents, then deduct 2,500 cents of accepted discounts. Expect three distinct lines and 22,000 net cents, split into North 15,000 and South 7,000.
 
 ## 8. References
 

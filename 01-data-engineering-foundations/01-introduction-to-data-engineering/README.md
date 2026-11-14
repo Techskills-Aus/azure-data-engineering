@@ -17,6 +17,13 @@
 
 [Read the complete Day 01 lesson](notes/Introduction%20to%20Data%20Engineering%20and%20the%20Data%20Lifecycle.md). The guide teaches concepts first, then logical design, then Azure implementation choices, with official Microsoft references and knowledge checks.
 
+## Start here: how a data pipeline works
+
+Follow a water pipeline from reservoirs, rivers and wells through treatment, storage and distribution. Then trace an order from SQL, CSV or an API through ingestion, validation and lakehouse tables to Power BI. The final page shows how orchestration, security and monitoring support the pipeline across the layers.
+
+- [Pipeline fundamentals PDF](flow-diagram/Data%20Engineering%20Pipeline%20Fundamentals.pdf)
+- [Editable draw.io diagrams](flow-diagram/Data%20Engineering%20Pipeline%20Fundamentals.drawio)
+
 ## Architecture patterns
 
 [Download the illustrated architecture comparison PDF](flow-diagram/Data%20Engineering%20Architecture%20Patterns.pdf). It covers Lambda for hot and cold processing paths, Kappa for stream processing and replay, and Medallion for bronze, silver and gold data layers. Each diagram is redrawn from Microsoft Learn with a numbered walkthrough, example, use case and trade-off.

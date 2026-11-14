@@ -41,3 +41,7 @@
 - [Cloud Adoption Framework](https://learn.microsoft.com/azure/cloud-adoption-framework/)
 
 **Author:** Madhur Mehta (professorofdata)
+
+## Interview practice
+
+[Eight interview questions with worked answers](interview-questions/)

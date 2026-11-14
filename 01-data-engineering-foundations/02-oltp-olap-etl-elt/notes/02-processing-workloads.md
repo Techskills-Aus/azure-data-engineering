@@ -6,6 +6,8 @@ At Harbourline Components, a parts distributor, the dispatch application must re
 
 Review the [Foundations glossary](../../01-introduction-to-data-engineering/notes/00-glossary.md) if transaction, grain, fact or reconciliation is unfamiliar.
 
+> **Reading guide** — First separate the checkout workload from the reporting workload. Then trace where each pipeline transforms data. Finish by reconciling the results and explaining your architecture choices.
+
 ## 2. OLTP protects a business operation
 
 Online transaction processing (OLTP) supports operational actions such as placing an order, posting a payment or reserving stock. A single order might require creating a header, creating its lines and reducing available stock. Use a transaction when those writes must succeed together. If stock is insufficient, roll back the header and lines as well as the reservation attempt.
@@ -13,6 +15,12 @@ Online transaction processing (OLTP) supports operational actions such as placin
 Atomicity groups changes into one outcome. Consistency means a committed transaction preserves the invariants enforced by the database and the application. Isolation controls how concurrent operations can observe and affect each other. Durability preserves committed changes within the engine's configured guarantees. An atomic transaction alone cannot make a flawed stock calculation correct. Two concurrent buyers can still compete for the last unit unless the reservation design enforces quantity at write time or uses suitable concurrency control.
 
 Operational queries often use indexed keys to retrieve small sets of rows. Normalized tables can keep shared attributes in one place and make updates easier to reason about. Measure transaction latency and concurrent write behavior under representative load. Additional indexes can speed certain reads while increasing storage and write maintenance.
+
+### Walk through a failed reservation
+
+Assume the inventory table shows one unit for SKU P-184. The first order asks for one unit and the next order arrives before the first commit returns. The application can condition its inventory update on available quantity being at least the requested quantity. The winning transaction changes availability from one to zero. The other request checks the affected-row count, detects that the reservation failed and rolls back its order writes. In a real deployment, verify this behavior with simultaneous transactions and confirm how the engine reports lock timeouts or retryable conflicts.
+
+> **Design check** — Give each order submission a stable request identifier so a retry after a lost response can discover an existing committed order. Stock protection and retry protection address different failure modes.
 
 ## 3. OLAP answers a question across history
 
@@ -52,6 +60,17 @@ ELT is useful when a team needs to reprocess historical inputs or support multip
 | How do teams replay? | Use approved staging or repeat the source extract | Reprocess retained inputs within the access policy |
 | What limits the design? | Processing capacity and replay evidence | Raw-data policy, target compute and retention |
 
+### Choose a path using concrete constraints
+
+| Constraint | Plausible design | Evidence to ask for |
+|---|---|---|
+| Raw free-text fields must remain inside the source boundary | Filter or redact before loading the analytical target | Approved field list and a sample of both output schema and values |
+| Finance changes classification rules after the period closes | Retain governed historical inputs, then rebuild affected periods under versioned rules | Retention window, input lineage and the allowed restatement process |
+| Source load slows checkout | Extract a bounded change range or read from an approved replica where supported | Checkout latency, replication lag and batch completeness |
+| Several reporting teams share the same metric | Publish a governed fact and semantic measure with an identified owner | Grain, measure definition and reconciliation totals |
+
+> **Architecture decision** — Document where the approved raw boundary sits before comparing tools. A platform can support both ETL and ELT, so the relevant question is which records each environment may receive and where the required processing runs.
+
 ## 5. Calculate and reconcile a concrete result
 
 Order A101 in the North region has a 12,000-cent line with a 2,000-cent discount and a 5,000-cent line with no discount. Order A102 is cancelled and has a 9,000-cent line. Order A103 in the South has a 7,500-cent line with a 500-cent discount. Define this exercise's measure as confirmed merchandise amount after line discounts, excluding cancellations and excluding tax, shipping and refunds. The expected result is North 15,000 cents across two accepted lines and South 7,000 cents across one accepted line.
@@ -61,6 +80,10 @@ The first reconciliation is four source lines = three accepted + one cancelled e
 ### Design the publication boundary
 
 Capture a stable source range and count its expected records. If order headers and lines can change during extraction, use a consistent source view or a supported change boundary with documented ordering. Validate unique keys and missing references before aggregating. Publish only after reconciliation succeeds, then advance progress according to the recovery design. If publication succeeds and checkpointing fails, retry the same batch using deterministic keys and reconcile its existing publication before reporting success.
+
+### Diagnose a mismatched output
+
+If North reports 24,000 instead of 15,000 cents, filter the published rows back to their order keys. The 9,000-cent difference matches cancelled A102. Confirm whether the source snapshot recorded the cancellation and whether the transform applied the status filter. If a result is exactly twice the expected amount, inspect join cardinality and the number of fact rows per order-line key. If both paths produce the same wrong result, parity was necessary but insufficient. Compare the output against an independently calculated fixture and the documented business rule.
 
 ## 6. Guided practice
 
@@ -101,6 +124,14 @@ An accepted delivery tells you that inputs arrived. The report also depends on t
 ### 8. The source invalidates a line after it was reported. What should the pipeline do?
 
 Capture the correction as a new authoritative version or operation. Apply it to the affected business key and recompute the applicable historical period under the reporting policy. Validate the delta against the prior publication, preserve audit evidence and expose the new accepted version. Replaying the correction should preserve the same final balance.
+
+### 9. A transaction commits, but the client times out. Is another submission safe?
+
+The timeout does not reveal whether the database committed. An immediate submission with a new identity can create a second order. Use the original request identifier to look up the committed result or retry through a uniqueness rule on that identifier. Verify that the order, lines and inventory reservation still correspond to exactly one successful request.
+
+### 10. ETL and ELT agree, but their output is 9,000 cents too high. What test is missing?
+
+Both paths may share the same cancellation rule and therefore share the same bug. Check the source status and the independent reconciliation. Four input lines should yield three accepted lines and one cancelled exclusion, with 9,000 gross cents explained by that exclusion. Comparing the paths tests implementation agreement. Comparing each path against a business fixture tests correctness.
 
 ## 8. References
 

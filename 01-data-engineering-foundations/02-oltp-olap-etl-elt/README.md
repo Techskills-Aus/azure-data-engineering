@@ -5,7 +5,7 @@
 1. Read the [complete chapter](notes/02-processing-workloads.md) or [download the textbook PDF](notes/02-processing-workloads.pdf).
 2. Compare the two pipeline boundaries using the [architecture PDF](architecture/day02-processing.pdf) or [editable draw.io](architecture/day02-processing.drawio). Page ARCH-201 shows ETL and ELT side by side.
 3. Open the [editable teaching slides](presentation/day02-processing.pptx).
-4. Run the SQL exercise, then answer the eight review questions in section 7 before checking the worked answers.
+4. Run the SQL exercise, then answer the ten review questions in section 7 before checking the worked answers.
 
 ## Local practice
 

@@ -1,0 +1,7 @@
+{
+  "canonical_rows": 100000,
+  "batch_01_rows": 99000,
+  "batch_02_rows": 2500,
+  "net_cents": -332063802,
+  "replay": "PASS"
+}

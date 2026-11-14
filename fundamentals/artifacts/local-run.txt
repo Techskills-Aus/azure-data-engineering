@@ -1,0 +1,11 @@
+{"canonical_rows": 100000, "batch_01_rows": 99000, "batch_02_rows": 2500, "net_cents": -332063802, "replay": "PASS"}
+
+real	0m1.453s
+user	0m1.143s
+sys	0m0.309s
+3542109 /tmp/azure-full/batch_01.csv
+  89511 /tmp/azure-full/batch_02.csv
+ 975109 datasets/batch_01.full.csv.gz
+  24593 datasets/batch_02.full.csv.gz
+4631322 total
+Python 3.12.14

@@ -190,3 +190,96 @@ Day 02 deepens OLTP versus OLAP and ETL versus ELT. Day 03 introduces file forma
 *This is original teaching material informed by linked Microsoft documentation, not a copy of Microsoft's diagrams or tutorials.*
 
 **Madhur Mehta( professorofdata)**
+
+
+## The engineering system behind a metric
+
+A dashboard value is the last step in a chain of decisions. Start with the question its reader will act on, identify the event that represents the business fact, and state the row grain before selecting a service. For the paid-order example, an order-line sale and a payment settlement are different facts: one describes a commercial commitment; the other confirms the transfer of money. Joining either event to a many-row status history without first selecting the appropriate version causes fan-out and overstatement.
+
+A useful data contract specifies: producer and owner; record key and grain; field types and meanings; update and delete semantics; event timestamp and time zone; expected delivery frequency; allowed lateness; schema-change process; sensitivity classification; and controls for counts and monetary totals. The consumer contract adds published-through time, metric definitions, availability target, correction policy, and support ownership. These contracts are versioned documents, not merely inferred schemas.
+
+| Layer | Input and responsibility | Output and evidence |
+|---|---|---|
+| Source | Application writes business events under its own transaction rules | Stable identifiers, timestamps, source versions |
+| Ingestion | Capture a bounded set of records without silently dropping changes | Durable batch or offset manifest and source counts |
+| Storage | Preserve controlled raw evidence for replay and audit | Immutable receipt, access policy, retention rule |
+| Transformation | Standardize, deduplicate, validate and model at declared grains | Rejected-record reason codes and tested tables |
+| Serving | Publish governed measures to an agreed audience | Versioned data product, freshness and reconciliation |
+| Operations | Detect drift, failure and cost anomalies, then recover safely | Run log, alerts, ownership and replay procedure |
+
+### Define the business outcome before the pipeline
+
+Southbank Retail has two consumers. The fulfilment team needs a near-current count of paid orders not dispatched. Finance needs a reproducible daily close after settlement and returns have had time to arrive. One table can support both only if it exposes status, currency, event time, published-through time and whether the value is provisional. If it hides late corrections, finance cannot reproduce yesterday's published total. If it waits for finance close, operations sees stale data. The design should make those distinct service expectations explicit.
+
+For a daily net-settled-sales measure, define the formula as settled line amounts minus posted line-level refunds. Specify exclusions: test orders, failed settlements, non-AUD currency unless converted under a documented rate, and cancelled lines with no settlement. A delivery fee allocated to lines needs its own allocation rule; adding the order-level fee after a line join counts it once per line. These are modeling decisions before they are SQL decisions.
+
+### Distinguish the clocks
+
+| Clock | Meaning | Typical use |
+|---|---|---|
+| Event time | When the business activity occurred | Business date and event ordering |
+| Source commit time | When the source recorded the change | CDC ordering and source audit |
+| Arrival time | When the platform received it | Lateness and ingestion SLA |
+| Processing time | When a transform handled it | Run diagnostics |
+| Publication time | When consumers could see the result | Data-product freshness |
+
+A correction received on Tuesday for a Sunday sale belongs to Sunday's business date while appearing in Tuesday's ingestion run. Store both timestamps. Sydney daylight-saving transitions mean a local date is not safely derived by adding a fixed UTC offset. Keep UTC instants plus the named business time zone.
+
+## Architecture reading: logical responsibilities before products
+
+The same design can be expressed without Azure services: producers → durable receipt → quality and standardization → modeled facts → governed consumption, with security and observability spanning every stage. Products are selected afterward. ADF is suitable for scheduled coordination and copy; ADLS Gen2 holds landed files; Databricks can transform large or complex datasets into Delta tables; Power BI serves approved metrics. These are illustrative component assignments, not a claim that every workload needs every service.
+
+In the four-page architecture file, page ARCH-001 is the logical lifecycle, ARCH-002 compares ETL and ELT, ARCH-003 separates delivery mode from change capture, and ARCH-004 maps a retail workload onto Azure. Read arrows as data or control dependencies according to their labels. A retry arrow should return to a durable checkpoint, not imply a new business event. The companion PDF must be checked against the editable source before it is published.
+
+### Explain the Azure implementation boundary
+
+The order application remains the system of record for order status. ADF reads a bounded extract using an identity authorized only for required source objects and writes a uniquely identified landing batch. The landing manifest records lower and upper boundaries, row count, schema version, file hashes, and run ID. ADLS permissions restrict raw customer fields; downstream consumers do not receive broad raw access. Databricks validates source versions and builds line-grain tables. Power BI reads an approved serving endpoint or semantic model. Azure Monitor can collect supported platform diagnostics, but business controls such as settlement totals still need explicit checks. Purview discovery or lineage coverage must be tested for each integrated asset and transformation.
+
+Private network access, authorization and encryption solve different problems. A private endpoint changes the network route and DNS requirements; it does not grant data-plane permissions. A managed identity supplies workload credentials; it still needs scoped roles or ACLs. Sensitive fields should be minimized and classified, with access and retention determined by policy. Never put connection secrets in a diagram, repository or notebook.
+
+### Failure and replay walkthrough
+
+Suppose batch B17 contains 10,000 source rows and lands successfully, but the transformation stops after writing 6,000 candidate rows. Restart from B17's manifest rather than moving the source watermark forward. The transform should write to a run-scoped staging area, validate expected keys and totals, and publish an accepted version atomically where the chosen table format supports it. A repeated B17 delivery should leave the accepted row set unchanged. If two records share a business key and version but have different payloads, quarantine both or follow an explicit source-authorized resolution rule; choosing the latest arrival is not a reliable business rule.
+
+The source extract and the downstream commit are not one distributed transaction. Therefore document a recovery invariant: every committed source boundary is represented exactly once in the published table state, and an uncommitted boundary remains replayable. A control table can track batch states such as discovered, landed, validated, published and failed, but state transitions must be checked against the actual files and tables. A successful scheduler status alone does not prove the monetary result.
+
+### Design decisions and tradeoffs
+
+| Decision | Advantage | Cost or risk | Choose when |
+|---|---|---|---|
+| Keep immutable raw receipts | Enables replay and investigation | Storage, privacy and retention obligations | Corrections or audits matter |
+| Transform before landing | Limits sensitive raw exposure | Harder to reprocess lost detail | Policy forbids retaining source payload |
+| Schedule daily batch | Simple close boundary and cost control | Higher latency | Consumer accepts next-day data |
+| Process events continuously | Faster operational response | Checkpoints, ordering and on-call burden | Freshness requirement justifies it |
+| Maintain separate provisional and closed views | Preserves both operational speed and finance reproducibility | Additional definitions and governance | Consumers have distinct close policies |
+
+Evaluate decisions against the Azure Well-Architected pillars: reliability, security, cost optimization, operational excellence and performance efficiency. A service diagram alone is not an architecture specification. Record requirements, data contracts, failure behavior, access boundaries, monitoring signals, rejected alternatives and rollback procedure. The design should be clear enough for an engineer to implement and an operator to recover.
+
+## Practice: review a proposed design
+
+A team proposes a daily extract filtered by `updated_at > last_success_time`, appends every row to a sales fact, and refreshes Power BI when the ADF run turns green. Review it in this order:
+
+1. Confirm the fact grain and how source updates, deletes, refunds and replays are represented.
+2. Examine the boundary: equal timestamps can be skipped, and an application timestamp may not expose deletes. Ask whether source CDC or a composite watermark is available.
+3. Verify batch landing before acknowledging the boundary. Record a manifest and keep enough source evidence to replay.
+4. Replace blind append with a version-aware merge or an immutable event model plus a derived current view.
+5. Compare source and target counts at the correct grain, reject count, and settled/refund totals by currency and business date.
+6. Publish a tested result and expose published-through time. Trigger an alert if expected files or controls are missing, even when infrastructure activity reports success.
+
+**Expected reasoning:** The proposed job can omit tied or deleted changes, double-count retries, and show an apparently fresh dashboard with incorrect totals. The fix is a contract and state model, not merely a different refresh schedule.
+
+## Common misconceptions and operational questions
+
+- **“Exactly once delivery” means exactly once business effect.** Transport may retry. Define stable event identity and idempotent application of a change.
+- **A green pipeline run proves the metric.** It proves only the checks the run actually made. Add business reconciliation and freshness controls.
+- **The latest arrival is the latest business version.** Network and batch delays can reorder arrivals. Prefer source commit sequence or an explicit version.
+- **Raw data is safe because it is internal.** Raw may contain sensitive fields and needs its own access, retention and audit policy.
+- **CDC means real-time processing.** CDC is a capture method; changes can be delivered in scheduled batches.
+
+If a dashboard is stale, inspect the last successful source boundary, landing manifest, transform acceptance and semantic-model refresh separately. If totals changed after close, locate the correction's business date and version, compare old and new accepted states, and follow the finance restatement policy. If costs spike, measure scanned volume, retries and warehouse/cluster uptime before changing service sizes.
+
+## Further official reading (checked 14 November 2026)
+
+- [Azure architecture design specification](https://learn.microsoft.com/en-us/azure/well-architected/architect-role/architecture-design-specification): document business goals, design decisions, operations, tests and alternatives.
+- [Azure architecture icons](https://learn.microsoft.com/en-us/azure/architecture/icons/): official artwork and usage guidance for Azure diagrams.
+- [Modern analytics architecture with Azure Databricks](https://learn.microsoft.com/en-us/azure/architecture/solution-ideas/articles/azure-databricks-modern-analytics-architecture): a current solution idea, to be adapted to workload requirements.

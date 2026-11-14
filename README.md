@@ -4,6 +4,8 @@
 
 Study in numbered order. Every chapter will provide topic-specific notes, practical exercises where relevant, diagrams, references and learning checks. Source diagrams and PDF exports will be provided together when published; modules include presentation slides.
 
+[View the full course curriculum](00-course-curriculum/)
+
 ## Curriculum map
 
 | Module | Subject | Chapters |

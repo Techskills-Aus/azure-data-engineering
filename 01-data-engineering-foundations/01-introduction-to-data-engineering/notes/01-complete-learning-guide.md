@@ -14,7 +14,19 @@
 | 2 — Apply | How ingestion, quality, modeling and orchestration work together | Design a daily sales pipeline and describe its data contract |
 | 3 — Design | Why architecture includes recovery, access controls, monitoring and trade-offs | Defend choices for a realistic enterprise workload |
 
-## 1. Start with the business problem
+## 1. What data engineering means
+
+**Definition.** Data engineering builds and operates the systems that collect, validate, transform and deliver data with a defined business meaning.
+
+| Responsibility | Primary question | Typical output |
+|---|---|---|
+| Operational application | Was this sale recorded correctly? | A committed transaction |
+| Data engineering pipeline | Can users reliably use sales from every store? | A validated, traceable sales dataset |
+| Business analysis | What changed in sales and what explains it? | An interpretation based on agreed measures |
+
+> **Worked example · Retail sales close** — A store records two units at AUD 35 each with a 10% discount. The pipeline retains the source line, validates the quantity and discount, and publishes AUD 63 as merchandise sales before tax or later refunds. Finance can trace that figure back to the source line and reproduce it by applying the same rule.
+
+### Start with the business problem
 
 Imagine a retail chain with 45 stores, an online shop and a warehouse. The point-of-sale application records purchases. The ecommerce application records web orders. The ERP system manages products and inventory. Finance asks: **What was yesterday's net revenue by store and product category?**
 

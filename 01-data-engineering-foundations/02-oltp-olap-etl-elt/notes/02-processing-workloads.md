@@ -1,6 +1,19 @@
 # Day 02 · OLTP, OLAP, ETL and ELT
 
-## 1. Start with the two questions
+## 1. Four definitions to start with
+
+**OLTP** is online transaction processing. It supports operational reads and writes such as confirming an order. **OLAP** is online analytical processing. It supports questions that compare and summarize historical records.
+
+**ETL** means extract, transform and load. The main transformation happens before loading the designated analytical target. **ELT** means extract, load and transform. Approved inputs enter the analytical environment before its compute applies the main transformation.
+
+| Compare | First concept | Second concept |
+|---|---|---|
+| Workload purpose | OLTP commits a valid operational change | OLAP answers an analytical question |
+| Transformation placement | ETL applies the rule before target load | ELT applies the rule after target load |
+
+> **Worked example · Confirmed merchandise sales** — Confirming order A101 and reserving its stock is OLTP. Grouping confirmed order lines by region is OLAP. The regional result can use either ETL or ELT. If the integration job removes cancelled lines before loading the target, it uses ETL. If it loads the approved extracts first and filters them on the analytical platform, it uses ELT.
+
+### Start with the two questions
 
 At Harbourline Components, a parts distributor, the dispatch application must reserve stock when an order is confirmed. Meanwhile, operations wants to know which regions account for the most net merchandise sales last month. The first task changes the state of a few current records. The second reads many historical records and combines them according to a definition. This chapter teaches how to choose where these workloads run, how to move data between them, and how to prove that the published result is correct.
 

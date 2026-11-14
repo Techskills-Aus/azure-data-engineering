@@ -2,14 +2,14 @@
 
 **Module 01 · Chapter 02 of 05**
 
-1. Read the [complete chapter](notes/02-processing-workloads.md) or [download the textbook PDF](notes/OLTP%2C%20OLAP%2C%20ETL%20and%20ELT.pdf).
-2. Compare the two pipeline boundaries using the [architecture PDF](architecture/day02-processing.pdf) or [editable draw.io](architecture/day02-processing.drawio). Page ARCH-201 shows ETL and ELT side by side.
-3. Open the [editable teaching slides](presentation/day02-processing.pptx).
+1. Read the [complete chapter](notes/OLTP%2C%20OLAP%2C%20ETL%20and%20ELT.md) or [download the textbook PDF](notes/OLTP%2C%20OLAP%2C%20ETL%20and%20ELT.pdf).
+2. Compare the two pipeline boundaries using the [architecture PDF](architecture/OLTP%2C%20OLAP%2C%20ETL%20and%20ELT%20-%20Architecture.pdf) or [editable draw.io](architecture/OLTP%2C%20OLAP%2C%20ETL%20and%20ELT%20-%20Architecture.drawio). Page ARCH-201 shows ETL and ELT side by side.
+3. Open the [editable teaching slides](presentation/OLTP%2C%20OLAP%2C%20ETL%20and%20ELT.pptx).
 4. Run the SQL exercise, then try the [eight interview questions and worked answers](interview-questions/).
 
 ## Local practice
 
-Download [retail-processing.sql](sql/retail-processing.sql) and [verify.py](sql/verify.py) to the same folder. Run `python verify.py` with Python 3. The script uses in-memory SQLite and requires no cloud account or external dependencies. It models the ETL and ELT boundaries with separate tables and views inside one database.
+Download [oltp-olap-etl-elt-lab.sql](sql/oltp-olap-etl-elt-lab.sql) and [oltp-olap-etl-elt-validation.py](sql/oltp-olap-etl-elt-validation.py) to the same folder. Run `python oltp-olap-etl-elt-validation.py` with Python 3. The script uses in-memory SQLite and requires no cloud account or external dependencies. It models the ETL and ELT boundaries with separate tables and views inside one database.
 
 | Region | Accepted order lines | Net amount in cents |
 |---|---:|---:|
@@ -18,6 +18,6 @@ Download [retail-processing.sql](sql/retail-processing.sql) and [verify.py](sql/
 
 The verifier checks source control totals, accepted line grain, regional results and both directions of ETL/ELT equality. Azure deployments are outside the local exercise.
 
-[Previous chapter](../01-introduction-to-data-engineering/) · [Foundations glossary](../01-introduction-to-data-engineering/notes/00-glossary.md)
+[Previous chapter](../01-introduction-to-data-engineering/) · [Foundations glossary](../01-introduction-to-data-engineering/notes/Data%20Engineering%20and%20Business%20Glossary.md)
 
 **Author** Madhur Mehta (professorofdata)

@@ -12,6 +12,6 @@ az storage account create -g "$RG" -n "$ACCOUNT" -l "$REGION" --sku Standard_LRS
 # identity Storage Blob Data Contributor on this account. Allow propagation.
 az storage container create --account-name "$ACCOUNT" --name landing --auth-mode login
 for batch in 01 02; do
-  az storage blob upload --account-name "$ACCOUNT" --container-name landing --name "postings/batch_$batch.csv" --file "$DATA/batch_$batch.csv" --auth-mode login --overwrite false
+  az storage blob upload --account-name "$ACCOUNT" --container-name landing --name "postings/bank-posting-reconciliation-batch-$batch.csv" --file "$DATA/bank-posting-reconciliation-batch-$batch.csv" --auth-mode login --overwrite false
 done
 az storage blob list --account-name "$ACCOUNT" --container-name landing --prefix postings/ --auth-mode login --query '[].name' -o tsv

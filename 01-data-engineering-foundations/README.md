@@ -4,7 +4,7 @@ Five sequential chapters covering core concepts and architecture before implemen
 
 ## Start with the glossary
 
-[Data Engineering and Business Glossary](01-introduction-to-data-engineering/notes/00-glossary.md) explains 137 terms in learning order.
+[Data Engineering and Business Glossary](01-introduction-to-data-engineering/notes/Data%20Engineering%20and%20Business%20Glossary.md) explains 137 terms in learning order.
 
 | Day | Topic | Status |
 |---|---|---|

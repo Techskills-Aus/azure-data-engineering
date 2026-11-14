@@ -3,7 +3,7 @@ import sqlite3
 
 
 def verify():
-    script = Path(__file__).with_name("retail-processing.sql").read_text()
+    script = Path(__file__).with_name("oltp-olap-etl-elt-lab.sql").read_text()
     with sqlite3.connect(":memory:") as connection:
         connection.executescript(script)
         expected = [("North", 2, 15000), ("South", 1, 7000)]

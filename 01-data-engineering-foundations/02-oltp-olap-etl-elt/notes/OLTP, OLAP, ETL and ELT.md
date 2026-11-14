@@ -17,7 +17,7 @@
 
 At Harbourline Components, a parts distributor, the dispatch application must reserve stock when an order is confirmed. Meanwhile, operations wants to know which regions account for the most net merchandise sales last month. The first task changes the state of a few current records. The second reads many historical records and combines them according to a definition. This chapter teaches how to choose where these workloads run, how to move data between them, and how to prove that the published result is correct.
 
-Review the [Foundations glossary](../../01-introduction-to-data-engineering/notes/00-glossary.md) if transaction, grain, fact or reconciliation is unfamiliar.
+Review the [Foundations glossary](../../01-introduction-to-data-engineering/notes/Data%20Engineering%20and%20Business%20Glossary.md) if transaction, grain, fact or reconciliation is unfamiliar.
 
 > **Reading guide** — First separate the checkout workload from the reporting workload. Then trace where each pipeline transforms data. Finish by reconciling the results and explaining your architecture choices.
 
@@ -100,7 +100,7 @@ If North reports 24,000 instead of 15,000 cents, filter the published rows back 
 
 ## 6. Guided practice
 
-Run the [local SQL exercise](../sql/retail-processing.sql) as described in the chapter README. The SQL models normalized operational tables and two analytical paths. Both use the same business rule so you can compare results independently of the engine. Read the supplied output before changing the rules. Then mark A102 confirmed before the ETL insert and rebuild both paths. North should become 24,000 cents across three lines, South stays at 7,000 cents, and total net becomes 31,000 cents. Restore the cancellation before comparing with the original result.
+Run the [local SQL exercise](../sql/oltp-olap-etl-elt-lab.sql) as described in the chapter README. The SQL models normalized operational tables and two analytical paths. Both use the same business rule so you can compare results independently of the engine. Read the supplied output before changing the rules. Then mark A102 confirmed before the ETL insert and rebuild both paths. North should become 24,000 cents across three lines, South stays at 7,000 cents, and total net becomes 31,000 cents. Restore the cancellation before comparing with the original result.
 
 For a design exercise, assume free-text order notes may not leave the operational boundary. Identify the allowed columns, define which control totals the destination can calculate, and describe how you would replay a late correction. Your design must identify the last accepted publication and the source bounds used to build it.
 

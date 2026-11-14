@@ -38,7 +38,7 @@ db.execute('CREATE TABLE posting(id INTEGER PRIMARY KEY, account INTEGER, branch
 sql = '''INSERT INTO posting VALUES (?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE
 SET cents=excluded.cents, version=excluded.version, batch=excluded.batch
 WHERE excluded.version > posting.version'''
-for name, rows in [('batch_01',base),('batch_02',delta)]:
+for name, rows in [('bank-posting-reconciliation-batch-01',base),('bank-posting-reconciliation-batch-02',delta)]:
     with (out/f'{name}.csv').open('w',newline='') as stream:
         writer = csv.writer(stream)
         writer.writerow(fields)
@@ -52,8 +52,8 @@ with db:
     db.executemany(sql,delta)
 assert db.execute('SELECT COUNT(*),SUM(cents) FROM posting').fetchone() == (n,sum(r[4] for r in expected.values()))
 summary = {'canonical_rows':n,'batch_01_rows':len(base),'batch_02_rows':len(delta),'net_cents':sum(r[4] for r in expected.values()),'replay':'PASS'}
-(out/'validation.json').write_text(json.dumps(summary,indent=2)+'\n')
-with (out/'branch_daily.csv').open('w',newline='') as stream:
+(out/'bank-posting-reconciliation-validation.json').write_text(json.dumps(summary,indent=2)+'\n')
+with (out/'bank-posting-reconciliation-daily-totals.csv').open('w',newline='') as stream:
     writer=csv.writer(stream)
     writer.writerow(['branch','business_date','posting_count','net_cents'])
     writer.writerows(db.execute('SELECT branch,day,COUNT(*),SUM(cents) FROM posting GROUP BY branch,day ORDER BY branch,day'))

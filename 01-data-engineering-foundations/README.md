@@ -9,7 +9,7 @@ Five sequential chapters covering core concepts and architecture before implemen
 | Day | Topic | Status |
 |---|---|---|
 | 01 | [Introduction to Data Engineering and the Data Lifecycle](01-introduction-to-data-engineering/) | Published with notes, architecture source and PDF, and slides |
-| 02 | OLTP, OLAP, ETL and ELT | Planned |
+| 02 | [OLTP, OLAP, ETL and ELT](02-oltp-olap-etl-elt/) | Published |
 | 03 | Data Sources, Formats and APIs | Planned |
 | 04 | Batch, Streaming and CDC | Planned |
 | 05 | Modern Data Platform Architecture | Planned |

@@ -19,7 +19,7 @@
 
 ## Architecture patterns
 
-[Download the Microsoft architecture diagrams PDF](flow-diagram/Data%20Engineering%20Architecture%20Patterns.pdf). It covers Lambda for hot and cold processing paths, Kappa for stream processing and replay, and Medallion for bronze, silver and gold data layers.
+[Download the illustrated architecture comparison PDF](flow-diagram/Data%20Engineering%20Architecture%20Patterns.pdf). It covers Lambda for hot and cold processing paths, Kappa for stream processing and replay, and Medallion for bronze, silver and gold data layers. Each diagram is redrawn from Microsoft Learn with a numbered walkthrough, example, use case and trade-off.
 
 ## Study materials
 

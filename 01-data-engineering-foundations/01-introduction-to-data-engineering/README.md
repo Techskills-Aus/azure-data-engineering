@@ -9,6 +9,10 @@
 4. Explain quality gates, idempotency, replay, security, monitoring and ownership.
 5. Walk through an Australian retail sales example and a reference Azure design.
 
+## Complete learning guide
+
+[Read the full beginner-to-enterprise Day 01 lesson](notes/01-complete-learning-guide.md). The guide teaches concepts first, then logical design, then Azure implementation choices, with official Microsoft references and knowledge checks.
+
 ## Editable architecture diagrams
 [Open the four-page draw.io source](architecture/day01-architectures.drawio) in diagrams.net.
 
@@ -21,7 +25,7 @@
 
 ## Publication status
 - **Published and verified on GitHub:** this chapter index and the editable draw.io source.
-- **Rebuilt locally for visual review:** six-page detailed textbook PDF, four-page architecture PDF and 20-slide editable PowerPoint. These binary assets have **not yet been uploaded to GitHub**, so no broken links are shown.
+- **Earlier binary drafts rejected for quality:** the PDF, diagram export and PowerPoint must be redesigned and verified before publishing. These binary assets have **not yet been uploaded to GitHub**, so no broken links are shown.
 - The draw.io GitHub source and locally rendered architecture PDF are separate revisions; verify parity before final publication.
 
 ## Primary Microsoft references

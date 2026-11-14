@@ -10,6 +10,11 @@ Learn how to select source interfaces and file formats, design repeatable extrac
 - [Editable architecture](architecture/Data%20Sources%2C%20Formats%20and%20APIs%20Architecture.drawio)
 - [Architecture PDF](architecture/Data%20Sources%2C%20Formats%20and%20APIs%20Architecture.pdf)
 
+## Practice data
+
+- [Order lines CSV](datasets/orders.csv)
+- [Nested order JSON](datasets/order.json)
+
 [Return to Foundations](../)
 
 **Author:** Madhur Mehta (professorofdata)

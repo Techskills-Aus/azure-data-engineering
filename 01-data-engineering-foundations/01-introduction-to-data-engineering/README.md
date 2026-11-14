@@ -17,21 +17,14 @@
 
 [Read the complete Day 01 lesson](notes/Introduction%20to%20Data%20Engineering%20and%20the%20Data%20Lifecycle.md). The guide teaches concepts first, then logical design, then Azure implementation choices, with official Microsoft references and knowledge checks.
 
-## Editable architecture diagrams
-[Open the four-page draw.io source](architecture/Introduction%20to%20Data%20Engineering%20and%20the%20Data%20Lifecycle%20-%20Architecture.drawio) in diagrams.net.
+## Architecture patterns
 
-| Unique page ID | Architecture | Reading goal |
-|---|---|---|
-| ARCH-001 | Data Lifecycle | Follow the business-to-analytics lifecycle |
-| ARCH-002 | ETL vs ELT | Compare where transformation happens |
-| ARCH-003 | Batch, Streaming and CDC | Understand three ingestion patterns |
-| ARCH-004 | Azure Retail Architecture | Read a sample ADF → ADLS → Databricks → Power BI architecture |
+[Download the Microsoft architecture diagrams PDF](flow-diagram/Data%20Engineering%20Architecture%20Patterns.pdf). It covers Lambda for hot and cold processing paths, Kappa for stream processing and replay, and Medallion for bronze, silver and gold data layers.
 
 ## Study materials
 
 - [Retail lifecycle walkthrough](notes/Introduction%20to%20Data%20Engineering%20and%20the%20Data%20Lifecycle%20-%20Retail%20Walkthrough.md)
 - [Lesson PDF](notes/Introduction%20to%20Data%20Engineering%20and%20the%20Data%20Lifecycle.pdf)
-- [Architecture diagrams PDF](architecture/Introduction%20to%20Data%20Engineering%20and%20the%20Data%20Lifecycle%20-%20Architecture.pdf)
 - [PowerPoint slides](presentation/Introduction%20to%20Data%20Engineering%20and%20the%20Data%20Lifecycle.pptx)
 
 ## Primary Microsoft references

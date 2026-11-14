@@ -1,0 +1,5 @@
+# Azure fundamentals | Bank posting reconciliation
+
+Start with [concepts](notes/azure-fundamentals.pdf) and the [architecture](flows/azure-fundamentals.pdf). Follow the [three labs](labs/walkthrough.md), then compare your output with artifacts/ and answer the [interview questions](interview/interview-questions.md).
+
+Prerequisites: Python 3.9+ and a terminal for the local lab. The optional cloud path uses Azure CLI, an approved subscription, a Synapse serverless SQL workspace and Entra access. This topic prepares you for subscriptions/resource groups, Entra/RBAC, networking and ADLS Gen2. Later modules extend the same separation into ADF orchestration, Databricks compute, Synapse serving, streaming, governance, monitoring and capstones.

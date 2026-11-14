@@ -4,7 +4,7 @@ Five sequential chapters covering core concepts and architecture before implemen
 
 | Day | Topic | Status |
 |---|---|---|
-| 01 | [Introduction to Data Engineering and the Data Lifecycle](01-introduction-to-data-engineering/) | README and editable draw.io published; binary PDFs/PPT pending GitHub upload |
+| 01 | [Introduction to Data Engineering and the Data Lifecycle](01-introduction-to-data-engineering/) | Published with notes, architecture source and PDF, and slides |
 | 02 | OLTP, OLAP, ETL and ELT | Planned |
 | 03 | Data Sources, Formats and APIs | Planned |
 | 04 | Batch, Streaming and CDC | Planned |

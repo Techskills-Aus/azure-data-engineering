@@ -14,7 +14,7 @@
 | 2 — Apply | How ingestion, quality, modeling and orchestration work together | Design a daily sales pipeline and describe its data contract |
 | 3 — Design | Why architecture includes recovery, access controls, monitoring and trade-offs | Defend choices for a realistic enterprise workload |
 
-## 1. Start with the business problem, not Azure services
+## 1. Start with the business problem
 
 Imagine a retail chain with 45 stores, an online shop and a warehouse. The point-of-sale application records purchases. The ecommerce application records web orders. The ERP system manages products and inventory. Finance asks: **What was yesterday's net revenue by store and product category?**
 
@@ -54,19 +54,31 @@ The analogy is useful but incomplete: data pipelines also need historical replay
 
 The sale happened at 17:42 local time. The data might be ingested at 18:05 and corrected the next morning. Event time, ingestion time and processing time are different. A daily sales report needs a documented rule for late changes and which time zone defines a business day.
 
-## 3. Pipeline vocabulary, with exact responsibilities
+## 3. The responsibilities inside a pipeline
 
-- **Source system:** An operational system that originates or owns data. It is not necessarily optimized for analytics.
-- **Ingestion:** Moving or acquiring source data into the analytical environment. Common methods include files, database extracts, APIs, CDC and event streams.
-- **Landing/raw layer:** A replayable copy of source data, with sufficient metadata to trace origin.
-- **Transformation:** Cleaning, parsing, joining, enriching, deduplicating or applying business logic.
-- **Data model:** An intentional structure that expresses entities, relationships, grain and metrics for consumers.
-- **Orchestration:** Coordinating dependencies, schedules, parameters, retries and execution status. It is not the same as doing every transformation itself.
-- **Data contract:** Agreed schema, keys, meaning, expected cadence, owner and change-management expectations between producer and consumer.
-- **Data quality:** Evidence that data meets agreed fitness-for-use requirements, including completeness, validity, consistency, uniqueness and timeliness.
-- **Data lineage:** Traceability from source through transformations to downstream outputs.
-- **Idempotency:** Repeating the same logical processing operation does not create duplicate business results.
-- **Data product:** A discoverable, governed and usable dataset or service with ownership and a defined purpose.
+### 3.1 Source ownership and ingestion
+
+A source system owns some part of the business record. The point-of-sale system owns the sale and the ERP owns product attributes. An ingestion job copies selected source evidence into the analytical environment. It must record the source identity, the bounds of the read, and its completion status. If two systems both supply a product category, the design must identify which system is authoritative for which reporting period. Otherwise a reliable copy can still produce inconsistent reporting.
+
+### 3.2 Raw landing and the data contract
+
+The raw layer preserves source payloads with enough context to replay them. A data contract explains how to interpret those payloads. It specifies the schema, business keys, version ordering, null and delete behavior, expected delivery cadence, and who approves breaking changes. For the retail feed, require an order ID, line ID, currency, source version and event timestamp. If a record loses its line ID, the platform cannot safely deduplicate or update it. Keep its original payload and rejection reason and route it for correction.
+
+### 3.3 Transformation and quality
+
+A transformation changes shape, representation or meaning. Parsing a timestamp changes representation. Applying an agreed Sydney business-date rule changes how that timestamp is used by the report. A quality check then verifies a stated expectation, such as every accepted order line having a valid monetary amount, or every repeated version having the same payload. Track accepted, repeated and quarantined records independently so a control-total discrepancy can be traced to a particular decision.
+
+### 3.4 Modeling, grain and serving
+
+A data model specifies entities, relationships and what one row represents. At order-line grain, the quantity and net amount belong to the line. The product and store dimensions provide attributes used to group those measures. When the business needs historical category reporting, agree whether to use the category in effect at the sale or the current category. Power BI can then define the measure once against a governed model and use the same definition across reports.
+
+### 3.5 Orchestration, idempotency and lineage
+
+Orchestration controls the order and conditions of work. It starts validation after ingestion has finalized its manifest, and schedules serving refresh after the validated Gold publication. Idempotency gives an operator a predictable outcome when a stage is repeated. Applying an already accepted version preserves the accepted values and totals. Lineage connects a visible result back through the fact row, the transform run and the raw batch. Keep these identifiers where the operator can find them during reconciliation.
+
+### 3.6 Ownership and service expectations
+
+Treat published sales data as a product with identified consumers, an owner, and a documented meaning. Agree what freshness means for each consumer. Finance may require an accepted close by a specific local time, while fulfilment may prefer provisional updates throughout the day. Expose freshness and acceptance explicitly and define who acts when the agreement is missed.
 
 ## 4. From simple flow to a real architecture
 
@@ -162,18 +174,55 @@ A reasonable starting design uses a single trusted ingestion foundation with dif
 
 **What could change the design?** Multi-region data residency, near-real-time fraud detection, source CDC limitations, strict recovery objectives, existing enterprise platform investments or highly sensitive information.
 
-## 10. Knowledge checks
+## 10. Worked recovery example and review questions
 
-1. Why is a successful ingestion job not enough to trust a sales report?
-2. Explain the difference between source event time and ingestion time.
-3. What is the difference between orchestration and transformation?
-4. Why preserve a raw layer if the final consumer needs only a gold table?
-5. When is CDC preferable to a nightly full extract?
-6. What does the *grain* of a sales fact mean?
-7. How would you prevent double-counting after a retry?
-8. Why should security and monitoring appear across the entire architecture?
-9. Give one reason to choose a warehouse and one reason to choose a lakehouse.
-10. Describe the difference between an architecture diagram and an implementation runbook.
+### Walk through one batch from source to Power BI
+
+The source emits two order lines, AU-104/1 at AUD 89 and AU-104/2 at AUD 31, each at version 1. A retry delivers the first line again. Bronze retains all three receipts. The manifest records three rows because it describes what arrived. Silver accepts two keys because it describes the current business state. The repeated receipt contributes zero to Gold. The initial amount is AUD 120 for two accepted lines. These differences are expected and should be visible in the reconciliation.
+
+A later batch delivers version 2 of AU-104/2 with AUD 25. Silver replaces the accepted value for that line. Gold recomputes the affected Sydney reporting date and records the new total of AUD 114. Finance can see the AUD 6 adjustment and trace it to the new source version. An exact replay leaves the total at AUD 114. If the same source key and version 2 later claim AUD 27, record the conflict and withhold the affected publication until the discrepancy is resolved under the source contract.
+
+If the job stops after Gold is written, the next attempt checks which batch produced the current Gold state. A matching publication can be reconciled and marked complete. If there is no accepted publication, the job reads the same Bronze batch and applies the same merge and validation rules. Power BI refreshes only from a validated publication. The last accepted reporting date stays visible while the recovery is in progress.
+
+### 1. Why is a successful ingestion job insufficient evidence for trusting a sales report?
+
+Ingestion confirms that a read and write operation finished. It cannot establish that the extract covered the expected source window, that retries did not duplicate transactions, or that the sales measure applies the correct discount and refund rules. Validate three boundaries separately. Compare the source control counts against the Bronze manifest, reconcile accepted and quarantined records in Silver, and compare the Gold totals against a control total calculated using the same definitions and reporting period. A run can copy 100% of the rows it read and still miss an entire store when the source filter is wrong.
+
+### 2. Which timestamps matter when a refund arrives late?
+
+Event time records when the underlying business event occurred. Arrival time records when the platform received its representation. Processing and publication times show when that representation was transformed and exposed. Suppose a sale occurred Monday in Sydney, its refund was issued Tuesday, and the refund reached Azure Wednesday. An event-date refund measure attributes it to Tuesday, while an original-sale restatement measure can adjust Monday under an explicit finance rule. Both can use the same source record. Preserve the separate timestamps and document which measure uses each date.
+
+### 3. How do orchestration and transformation work together?
+
+Azure Data Factory manages when the extraction runs, which source bounds it reads, and whether later activities may start. Databricks applies data rules such as parsing amounts, selecting the accepted version, and calculating net sales. For example, after ADF confirms that all Bronze files belong to a complete batch, it can launch a Databricks job with the batch identifier. The job reports quality counts and publication status. ADF can use those results when deciding whether to mark the batch complete. A green orchestration status is meaningful only when its success criteria include the required downstream checks.
+
+### 4. Why retain raw data when Power BI reads Gold?
+
+Bronze preserves evidence that a derived table may discard. If a timestamp parser used the wrong time zone, the raw payload and batch manifest let the team identify the affected files and rerun the corrected transformation. The Gold table may hold only a business date and have lost the input timestamp needed for recovery. Store Bronze with run identifiers, schema versions and restricted access. Set retention based on replay, auditing and the sensitivity of the stored fields. A replay is only possible while the relevant input and its decoding rules remain available.
+
+### 5. When should a team choose CDC over a nightly full extract?
+
+CDC is useful when the source supports recoverable change offsets, changes are a small share of the source, and the consumer needs updates including deletes. A nightly full snapshot is often simpler for a small reference table with a daily freshness requirement. For an orders table, CDC can provide the ordered update and delete events required to keep a target current. The team must still plan an initial load, durable offsets, handling of changes during initialization, and a recovery path if the source log expires before the consumer catches up.
+
+### 6. What does fact-table grain mean, and how do you prove it?
+
+Grain defines what one row represents before any measures or joins are designed. In this chapter the sales fact holds one accepted row per source order line, identified by source system, order ID and line ID. Versions determine which representation wins. If one line has two shipments, joining it directly to shipment-level rows duplicates its sales amount. Test uniqueness on the full line key, check row counts before and after dimension joins, and use a separate shipment fact or an agreed aggregation when shipment data is needed.
+
+### 7. How do you make retries safe when data was already written?
+
+Keep a stable batch identity tied to the source bounds and a manifest for its immutable inputs. In the target, apply changes using the business key and source version. Reprocessing an already accepted version leaves the accepted state and totals unchanged. If a Gold write succeeded before the completion marker was saved, reconcile the target publication on restart and finish recording completion or safely replay the same batch. A same-key, same-version record whose payload differs belongs in quarantine because the source contract cannot determine which value is correct.
+
+### 8. Where do monitoring and security belong in the architecture?
+
+Each handoff has a different exposure and failure mode. The extraction identity needs read access to approved source objects. The ingestion identity needs write access in the landing area. The serving identity reads curated tables through the SQL endpoint. Monitor elapsed time, source coverage, rejected rows and published-through date so an operational alert can identify the failing stage. Logs should identify runs and policy failures without copying sensitive values into broadly accessible operational records.
+
+### 9. How would you choose between a warehouse and a lakehouse?
+
+Start with the workload. A team that primarily serves structured SQL reporting may prefer a warehouse because it can organize relational modeling and serving within one SQL-oriented experience. A team that also retains heterogeneous files, runs Spark transformations and serves analytical tables from lake storage may prefer a lakehouse. Compare how each option handles updates, governed access, concurrent queries, workload cost and the team's support skills. Validate the decision with representative volumes and query patterns.
+
+### 10. What should a runbook add to an architecture diagram?
+
+An architecture diagram explains responsibilities, system boundaries and the movement of records or control signals. A runbook turns those responsibilities into incident actions. For a missed refresh, it should tell the operator where to look for the last source offset, how to confirm the manifest is complete, which quality conditions block publication, and how to rerun the failed batch without repeating the business effect. It should also name the owner who approves a restatement when a previously closed period changes.
 
 ## 11. What to study next
 

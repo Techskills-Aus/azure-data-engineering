@@ -48,12 +48,27 @@ Use separate identities for ingestion, transformation and consumption. Scope wri
 ## Decide what happens on failure
 If the orchestrator retries after storage has accepted a file, compare batch identity and content before reusing it. If a quality gate fails, preserve the last published close, quarantine the bad data and alert the owner. Commit the checkpoint after successful validated publication, or make publication and replay idempotent across a checkpoint failure. Replaying the same input range must preserve row counts and totals. A dashboard refresh alone cannot confirm this.
 
-## Knowledge checks
-1. Why is the report date distinct from arrival date? A late correction changes the original business day while arriving in a newer batch.
-2. Where would you detect duplicate payments? At the payment event key and version boundary, before joining to order lines.
-3. What should happen when two same-version records disagree? Quarantine and investigate. Arbitrary arrival order can conceal a source contract breach.
-4. What does idempotency promise here? Retrying the same validated delivery does not change the final state.
-5. How do you prevent an incomplete close from looking healthy? Expose published-through date, reconcile expected source coverage, and keep provisional status visible.
+## Knowledge checks with worked answers
+
+### 1. Which timestamps matter when a refund arrives late?
+
+Event time records when the underlying business event occurred. Arrival time records when the platform received its representation. Processing and publication times show when that representation was transformed and exposed. Suppose a sale occurred Monday in Sydney, its refund was issued Tuesday, and the refund reached Azure Wednesday. An event-date refund measure attributes it to Tuesday, while an original-sale restatement measure can adjust Monday under an explicit finance rule. Both can use the same source record. Preserve the separate timestamps and document which measure uses each date.
+
+### 2. How do orchestration and transformation work together?
+
+Azure Data Factory manages when the extraction runs, which source bounds it reads, and whether later activities may start. Databricks applies data rules such as parsing amounts, selecting the accepted version, and calculating net sales. For example, after ADF confirms that all Bronze files belong to a complete batch, it can launch a Databricks job with the batch identifier. The job reports quality counts and publication status. ADF can use those results when deciding whether to mark the batch complete. A green orchestration status is meaningful only when its success criteria include the required downstream checks.
+
+### 3. How do you make retries safe when data was already written?
+
+Keep a stable batch identity tied to the source bounds and a manifest for its immutable inputs. In the target, apply changes using the business key and source version. Reprocessing an already accepted version leaves the accepted state and totals unchanged. If a Gold write succeeded before the completion marker was saved, reconcile the target publication on restart and finish recording completion or safely replay the same batch. A same-key, same-version record whose payload differs belongs in quarantine because the source contract cannot determine which value is correct.
+
+### 4. Where do monitoring and security belong in the architecture?
+
+Each handoff has a different exposure and failure mode. The extraction identity needs read access to approved source objects. The ingestion identity needs write access in the landing area. The serving identity reads curated tables through the SQL endpoint. Monitor elapsed time, source coverage, rejected rows and published-through date so an operational alert can identify the failing stage. Logs should identify runs and policy failures without copying sensitive values into broadly accessible operational records.
+
+### 5. Why is a successful ingestion job insufficient evidence for trusting a sales report?
+
+Ingestion confirms that a read and write operation finished. It cannot establish that the extract covered the expected source window, that retries did not duplicate transactions, or that the sales measure applies the correct discount and refund rules. Validate three boundaries separately. Compare the source control counts against the Bronze manifest, reconcile accepted and quarantined records in Silver, and compare the Gold totals against a control total calculated using the same definitions and reporting period. A run can copy 100% of the rows it read and still miss an entire store when the source filter is wrong.
 
 ## Glossary
 **Grain** means what one row represents. **Watermark** is a boundary used to resume incremental processing. **Lineage** is traceability through transformations. **Semantic model** defines governed business measures and relationships for consumption. **Quarantine** isolates suspect records for review. **Freshness** measures how current the published data is relative to an agreed business time.

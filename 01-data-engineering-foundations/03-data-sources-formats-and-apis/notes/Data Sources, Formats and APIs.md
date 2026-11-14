@@ -161,7 +161,74 @@ Follow the producer's cursor contract. Cap page count, detect repeated cursors, 
 
 > If page 2 fails, leave the checkpoint unchanged. Resume or replay under the same logical extraction window and merge by the composite business key.
 
-## 9. Choose the format by who reads it
+## 9. Where the data lake, Delta Lake and Iceberg fit
+
+A data lake is a storage destination and can also be a downstream source. On Azure, an ADLS Gen2 account can hold raw JSON, CSV, photos, Parquet files and managed table data. The reader still needs to know how a particular object or table is represented.
+
+| Layer | Example | What it gives the learner |
+| --- | --- | --- |
+| Storage | ADLS Gen2 container | A location to land and access files |
+| File format | Parquet order-line file | Typed columnar representation for scans |
+| Table format | Delta Lake or Apache Iceberg | Metadata that defines a consistent table over data files |
+
+> The carrier API returns JSON. Land that payload in ADLS, flatten and validate it, then publish order lines as a Delta or Iceberg table. A downstream job can read that table as its source.
+
+## 10. Read snapshots through the table format
+
+Delta Lake typically stores Parquet data files alongside a _delta_log directory. Use it when a compatible engine needs atomic table updates, merge operations, or versioned reads. A plain Parquet scan of the directory may read files that are no longer part of the current table.
+
+Apache Iceberg uses table metadata, snapshots and manifests to identify the files in a table. Choose it when the engines and catalog you plan to share support the Iceberg features you need. Check each engine's read and write support, including schema updates and deletes.
+
+```
+# Delta-enabled Spark runtime. Use a fresh practice location.
+orders.write.format("delta").save("out/order_lines_delta")
+current = spark.read.format("delta").load("out/order_lines_delta")
+
+# Iceberg-enabled Spark with a configured catalog named lake.
+# The sales namespace must already exist.
+orders.writeTo("lake.sales.order_lines").using("iceberg").create()
+current = spark.table("lake.sales.order_lines")
+```
+
+> Either table initially returns two rows and 160,000 cents. If line 2 is corrected to 35,950 cents through a table-aware write, the current total becomes 161,000 cents. An earlier retained snapshot still represents 160,000 cents.
+
+## 11. Choose an API by its contract
+
+| Interface | Request example | When it fits |
+| --- | --- | --- |
+| REST over HTTP | GET /v1/order-lines?limit=1 | Resource-oriented source with documented filters and paging |
+| GraphQL | POST /graphql with an orderLines query | Source exposes a schema and lets clients select fields |
+| SOAP | POST an XML envelope with GetOrderLines | Enterprise or partner service publishes a WSDL contract |
+| Webhook | Carrier POSTs a shipment event to your endpoint | Producer pushes changes when they happen |
+
+REST endpoints commonly return JSON, but the API contract determines the representation. A documented incremental filter can reduce requests and data transfer. Use the method, authentication, pagination, and limits documented by the provider.
+
+```
+POST /graphql
+{"query":"{ orderLines(first: 1) { nodes { orderId lineId netCents }
+  pageInfo { hasNextPage endCursor } } }"}
+```
+
+The GraphQL query is shown across two lines for readability. Send it as a JSON-encoded string. Read data.orderLines.nodes, inspect any errors field even on HTTP 200, and pass endCursor as the next after value where the schema supports cursor paging.
+
+```
+<!-- SOAP body excerpt. Use the vendor WSDL for namespaces. -->
+<GetOrderLines><OrderId>00042</OrderId></GetOrderLines>
+```
+
+A SOAP client wraps the operation in an XML envelope, sends it to the service endpoint and checks for a SOAP Fault before extracting order lines. For a webhook, verify the signature, persist the incoming event, deduplicate by event ID and handle late or repeated deliveries.
+
+## 12. REST extraction from request to reconciliation
+
+Before you build the pipeline, collect the base URL, endpoint, credentials or identity, required headers, response schema, rate limits and pagination or filter rules. Identify which key and modification timestamp support incremental reads. Decide where the raw payload and checkpoint will live.
+
+For the carrier example, start with GET /v1/order-lines?limit=1 and send Accept: application/json. Supply the provider's documented authorization header. Validate the success response before reading items. Resolve the returned relative next link against the approved base URL and stop when next is null.
+
+Land both response bodies with a run identifier. Check for exactly two unique (order_id, line_id) keys and reconcile to 160,000 cents. Retry transient failures under the same extraction window. If the service refuses access, review permissions and credentials before retrying. Advance the checkpoint only after reconciliation.
+
+> Azure Data Factory REST Copy fits a compatible JSON endpoint with supported pagination. For a GraphQL or SOAP contract that needs custom request bodies, fault handling or cursor logic, use a client or notebook that implements the provider's contract and lands its responses for downstream processing.
+
+## 13. Choose the format by who reads it
 
 | Format | Choose when | Check before publishing |
 | --- | --- | --- |
@@ -171,7 +238,7 @@ Follow the producer's cursor contract. Cap page count, detect repeated cursors, 
 | Parquet | Analysts scan selected columns in a compatible lake engine | File sizes, partitioning, downstream reader |
 | ORC | A compatible Hive or Spark estate prefers ORC | Catalog and cross-engine support |
 
-## 10. Run the same-data exercise
+## 14. Run the same-data exercise
 
 ```
 order_schema = """order_id STRING, line_id INT, sku STRING,
@@ -224,3 +291,7 @@ Grain means what one record represents. A watermark is the saved boundary used t
 - [Apache ORC specification](https://orc.apache.org/specification/ORCv1/)
 - [Spark data sources](https://spark.apache.org/docs/latest/sql-data-sources.html)
 - [Spark Avro module](https://spark.apache.org/docs/latest/sql-data-sources-avro.html)
+- [Azure Databricks data and table formats](https://learn.microsoft.com/en-us/azure/databricks/query/formats/)
+- [Delta table history](https://learn.microsoft.com/en-us/azure/databricks/delta/history)
+- [Azure Data Lake Storage overview](https://learn.microsoft.com/en-us/azure/storage/blobs/data-lake-storage-introduction)
+- [GraphQL concepts in Azure API Management](https://learn.microsoft.com/en-us/azure/api-management/graphql-apis-overview)
